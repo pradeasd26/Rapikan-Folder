@@ -36,11 +36,26 @@ Berjalan **offline**, tanpa instalasi tambahan, dan **tidak memakai AI**, sehing
 
 > Disarankan mencoba pertama kali pada **salinan** folder, bukan folder asli.
 
+## Memindahkan ke drive lain (kosongkan drive C)
+
+Folder pribadi (Documents, Pictures, Videos, Music, Downloads) dipindah ke drive lain dan otomatis dikelompokkan per jenis:
+
+```powershell
+# simulasi dulu
+powershell -ExecutionPolicy Bypass -File .\Rapikan-Folder.ps1 -Pribadi -Tujuan "D:\Arsip" -Recurse
+# sungguhan
+powershell -ExecutionPolicy Bypass -File .\Rapikan-Folder.ps1 -Pribadi -Tujuan "D:\Arsip" -Recurse -Apply
+```
+
+Hasil: `D:\Arsip\Gambar\foto.jpg`, `D:\Arsip\Dokumen\laporan.pdf`, dst. Log `-Undo` disimpan di folder tujuan. Skrip mengecek ruang kosong di drive tujuan, menolak `AppData` dan folder sistem, dan melewati file OneDrive yang hanya online. Struktur subfolder asal diratakan per jenis (bisa dikembalikan dengan `-Undo`). Untuk folder tertentu saja: `-Path "C:\Users\NAMA\Videos" -Tujuan "D:\Arsip"`.
+
 ## Opsi
 
 | Opsi | Fungsi |
 | --- | --- |
 | `-Path "folder"` | Folder yang dirapikan (wajib, kecuali saat `-Undo`). |
+| `-Tujuan "folder"` | Pindahkan hasilnya ke folder/drive lain (dikelompokkan di sana). |
+| `-Pribadi` | Pilih otomatis Documents, Pictures, Videos, Music, Downloads milik Anda. |
 | `-By Type` | *(bawaan)* Subfolder per jenis: `Gambar`, `Dokumen`, `Video`, dan seterusnya. |
 | `-By Date` | Subfolder per bulan modifikasi, mis. `2026-11`. |
 | `-By TypeDate` | Gabungan: `Gambar\2026-11\foto.jpg`. |
@@ -78,7 +93,7 @@ File tersembunyi/sistem, `desktop.ini`, `thumbs.db`, pintasan (`.lnk`), unduhan 
 
 ## Batasan
 
-- Diuji pada PowerShell 7 dengan folder contoh (simulasi, eksekusi, jalan ulang, undo, mode tanggal, penolakan folder terlarang). **Belum diuji langsung di Windows PowerShell 5.1**; sintaksnya sengaja dibuat kompatibel.
+- Diuji pada PowerShell 7 dengan folder contoh (simulasi, eksekusi, jalan ulang, undo, mode tanggal, penolakan folder terlarang). Simulasi dasar sudah dicoba di Windows PowerShell 5.1; fitur `-Tujuan`/`-Pribadi` diuji di PowerShell 7.
 - Undo melewati file yang sudah dipindah atau diubah setelah proses berjalan, dan melaporkan jumlahnya.
 - Tanggal yang dipakai adalah waktu modifikasi terakhir file, bukan tanggal pembuatan.
 
