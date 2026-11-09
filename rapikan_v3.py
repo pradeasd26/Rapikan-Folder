@@ -31,7 +31,7 @@ LOG_DIR = Path.home() / "rapikan_logs"
 CACHE = LOG_DIR / "cache_topik.json"
 BATCH = 25
 SKIP_EXT = {".exe", ".dll", ".sys", ".lnk", ".ini", ".msi", ".bat", ".tmp"}
-SKIP_DIR = {"node_modules", ".git", "__pycache__", "appdata", "$recycle.bin"}
+SKIP_DIR = {"node_modules", ".git", "__pycache__", "appdata", "$recycle.bin", "rapi"}
 LOG_DIR.mkdir(exist_ok=True)
 
 TIPE = {
@@ -78,8 +78,10 @@ def pahami_dasar(teks):
     if m:
         kecuali = [x.strip() for x in re.split(r",|\bdan\b", m.group(1)) if x.strip()]
     d = re.search(r"drive\s+([a-z])\b", low)
+    mp = re.search(r"([A-Za-z]:[\\/][^\"\n]*?)(?=\s+(?:ke\s|per\s|kecuali|dan\s|dengan\s|juga\s)|\s*$)", teks)
     return {
-        "folder": next((k for k in KATA_FOLDER if k in low), None),
+        "_path": bool(mp),
+        "folder": mp.group(1).strip() if mp else next((k for k in KATA_FOLDER if k in low), None),
         "per_tahun": "per tahun" in low or "tiap tahun" in low,
         "topik": "topik" in low or "isi" in low,
         "kecuali": kecuali,
@@ -110,6 +112,8 @@ def pahami(teks):
         )
         j = ollama_json(prompt)
         for k in ("folder", "per_tahun", "topik", "kecuali", "drive"):
+            if k == "folder" and hasil.get("_path"):
+                continue
             if j.get(k) not in (None, "", [], False):
                 hasil[k] = j[k]
     except Exception as e:
@@ -122,20 +126,25 @@ def cari_folder(teks):
     if not teks:
         return None
     teks = str(teks).strip('" ')
-    p = Path(teks)
-    kandidat = [p, Path.home() / teks, Path.home() / "Documents" / teks,
-                Path.home() / "Downloads" / teks, Path.home() / "Desktop" / teks]
-    for k in kandidat:
-        if k.is_absolute() and k.is_dir():
-            return k
-    for k in kandidat:
-        if k.is_dir():
-            return k.resolve()
-    low = teks.lower()
-    for kata, nama in KATA_FOLDER.items():
-        if kata in low:
-            return Path.home() / nama
-    return None
+    if re.match(r"^[A-Za-z]:", teks):          # path lengkap, mis. D:\Data
+        p = Path(teks)
+        return p if p.is_dir() else None
+    bagian = [b for b in re.split(r"[\\/]", teks) if b]
+    if not bagian:
+        return None
+    if bagian[0].lower() in KATA_FOLDER:       # "Dokumen" -> "Documents"
+        bagian[0] = KATA_FOLDER[bagian[0].lower()]
+    rel = Path(*bagian)
+    for dasar in (Path.home(), Path.home() / "Documents",
+                  Path.home() / "Downloads", Path.home() / "Desktop"):
+        if (dasar / rel).is_dir():
+            return dasar / rel
+    if len(bagian) == 1:                       # kalimat seperti "dokumen saya"
+        low = bagian[0].lower()
+        for kata, nama in KATA_FOLDER.items():
+            if kata in low:
+                return Path.home() / nama
+    return None   # subfolder tidak ketemu: jangan menebak folder induknya
 
 
 # ---------- drive ----------
@@ -161,7 +170,7 @@ def kumpulkan(folder, kecuali):
         dirs[:] = [d for d in dirs if d.lower() not in skip]
         for n in names:
             f = Path(dirpath) / n
-            if f.suffix.lower() not in SKIP_EXT:
+            if f.suffix.lower() not in SKIP_EXT and not n.startswith("~$"):
                 hasil.append(f)
     return hasil
 
@@ -361,6 +370,8 @@ def rapikan(perintah):
         folder = cari_folder(jawab)
         if folder is None:
             print("Folder tidak ditemukan, coba lagi (kosongkan untuk batal).")
+    if folder.parent == folder:
+        return print(f"Ditolak: {folder} adalah akar drive. Pilih subfolder, mis. D:\\Scan.")
     paksa = None
     if perintah.get("drive"):
         m = re.search(r"[A-Za-z]", str(perintah["drive"]))
@@ -377,7 +388,7 @@ def rapikan(perintah):
     if not langkah:
         return print("Tidak ada file yang perlu dipindah.")
     tampilkan_pratinjau(langkah)
-    if input(f"\nPindahkan {len(langkah)} file? (y/n): ").strip().lower() in ("y", "ya"):
+    if input(f"\nPindahkan {len(langkah)} file dari {folder}? (y/n): ").strip().lower() in ("y", "ya"):
         jalankan(langkah)
     else:
         print("Dibatalkan, tidak ada file yang dipindah.")
