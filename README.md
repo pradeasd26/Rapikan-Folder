@@ -49,6 +49,30 @@ powershell -ExecutionPolicy Bypass -File .\Rapikan-Folder.ps1 -Pribadi -Tujuan "
 
 Hasil: `D:\Arsip\Gambar\foto.jpg`, `D:\Arsip\Dokumen\laporan.pdf`, dst. Log `-Undo` disimpan di folder tujuan. Skrip mengecek ruang kosong di drive tujuan, menolak `AppData` dan folder sistem, dan melewati file OneDrive yang hanya online. Struktur subfolder asal diratakan per jenis (bisa dikembalikan dengan `-Undo`). Untuk folder tertentu saja: `-Path "C:\Users\NAMA\Videos" -Tujuan "D:\Arsip"`.
 
+## Rapikan-AI.ps1: agen AI lokal yang membaca isi dokumen
+
+Beda dengan `Rapikan-Folder.ps1` (berdasarkan ekstensi), skrip ini **membaca isi** dokumen dengan model bahasa kecil yang berjalan di komputer Anda (Ollama), lalu memilahnya per topik: `Surat`, `SK dan Peraturan`, `Laporan`, `Undangan dan Acara`, `Keuangan dan Anggaran`, `Formulir dan Label`, `Daftar dan Rekap`, `Pribadi`, dan seterusnya (tiap kategori punya keterangan di dalam skrip). Gratis dan offline setelah model diunduh sekali.
+
+**Persiapan (sekali saja):**
+
+1. Pasang Ollama dari https://ollama.com/download.
+2. Unduh model kecil. PC 8 GB RAM (i3/i7 generasi 8-9): `ollama pull qwen2.5:1.5b` (sekitar 1 GB). PC lebih lega: `ollama pull qwen2.5:3b`, lalu tambahkan `-Model qwen2.5:3b` saat menjalankan.
+
+**Pemakaian** (selalu simulasi dulu):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Rapikan-AI.ps1 -Path "$env:USERPROFILE\Documents\Kantor"
+powershell -ExecutionPolicy Bypass -File .\Rapikan-AI.ps1 -Path "$env:USERPROFILE\Documents\Kantor" -Apply
+```
+
+- AI hanya dijalankan sekali per file: hasil simulasi tersimpan di `_RapikanAI_Rencana.csv` dan dipakai ulang oleh `-Apply`. Bila dihentikan di tengah (Ctrl+C), analisis dilanjutkan dari file berikutnya.
+- `-Tujuan "D:\Arsip"` memindahkan ke drive lain. `-UsulNama` mengganti nama file dengan judul dari AI (periksa dulu di simulasi). `-Kategori "Surat=surat masuk/keluar|Keuangan=anggaran, kwitansi|Lainnya=sisanya"` memakai kategori sendiri; keterangan setelah tanda `=` membantu model kecil memilih dengan tepat (pisahkan kategori dengan `|`). Mengganti kategori otomatis memicu analisis ulang. `-Recurse` ikut subfolder.
+- `-TanpaAI` memilah dengan kata kunci saja, tanpa Ollama: sangat ringan untuk PC lemah.
+- `-Undo "log.csv"` mengembalikan semuanya (format log sama dengan `Rapikan-Folder.ps1`).
+- Aman: AI hanya boleh memilih dari daftar kategori, jadi isi dokumen tidak bisa memerintahkan apa pun. Tidak ada file yang dihapus.
+
+**Format yang dibaca isinya:** txt, md, csv, docx, xlsx, pptx, odt/ods/odp. PDF dibaca isinya hanya bila `pdftotext` terpasang; selain itu, juga untuk .doc/.xls/.ppt lama, hanya nama file yang dipakai. Dokumen hasil scan (gambar) tidak terbaca isinya.
+
 ## Opsi
 
 | Opsi | Fungsi |
