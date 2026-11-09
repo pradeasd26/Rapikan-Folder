@@ -124,3 +124,55 @@ File tersembunyi/sistem, `desktop.ini`, `thumbs.db`, pintasan (`.lnk`), unduhan 
 ## Lisensi
 
 [MIT](LICENSE)
+Versi Python: `rapikan_v3.py` (perintah bahasa chat)
+Rapikan file di Windows hanya dengan mengetik kalimat biasa. Ollama (AI lokal, gratis) membantu memahami perintah, sedangkan pemindahan file dilakukan oleh skrip Python dengan pratinjau dan konfirmasi terlebih dahulu.
+Fitur
+Perintah seperti chat: `rapikan folder downloads per tahun ke drive E`
+File dikelompokkan per jenis: `PDF`, `Word`, `Excel`, `Gambar`, `Video`, `Arsip`, dan seterusnya
+Opsi per tahun dan per topik (topik dibantu AI, isi PDF ikut dibaca bila `pypdf` terpasang)
+Deteksi file kembar (isi sama) lalu dipindah ke `_Duplikat`
+Pratinjau sebelum memindahkan, dan konfirmasi `y/n`
+Batalkan (`batalkan`) mengembalikan pemindahan terakhir, dengan riwayat dan laporan CSV
+Pemindahan aman: salin, verifikasi ukuran, baru hapus file asal
+Menolak merapikan akar drive (`C:\`, `D:\`) dan melewati file sementara `~$`
+Persyaratan
+Windows dengan minimal satu drive lain selain C: (D:, E:, dan seterusnya)
+Python 3
+Ollama dan model `qwen2.5:7b`
+Git (untuk mengambil repo)
+Pemasangan
+```powershell
+git clone https://github.com/pradeasd26/Rapikan-Folder
+cd Rapikan-Folder
+pip install requests pypdf
+ollama pull qwen2.5:7b
+```
+Cara pakai
+Jalankan di PowerShell:
+```powershell
+python rapikan_v3.py
+```
+Setelah muncul prompt `Kamu:`, ketik perintah, contohnya:
+Perintah	Hasil
+`rapikan folder downloads`	Merapikan folder Downloads
+`rapikan folder D:\Scan ke drive E`	Merapikan `D:\Scan`, hasil ke drive E
+`rapikan downloads per tahun`	Tambah subfolder tahun
+`rapikan downloads per topik`	Tambah subfolder topik (AI)
+`rapikan downloads kecuali Proyek dan Kuliah`	Melewati folder tertentu
+`batalkan`	Mengembalikan pemindahan terakhir
+`riwayat`	Melihat daftar log
+`keluar`	Menutup skrip
+Contoh hasil:
+```
+E:\Rapi\PDF\...
+E:\Rapi\Word\...
+E:\Rapi\Gambar\...
+E:\Rapi\_Duplikat\PDF\...
+```
+Keamanan dan catatan
+Skrip memindahkan file, bukan menyalin. Cobalah dulu pada folder kecil.
+Sebelum menekan `y`, periksa baris `Folder:` dan jumlah file di pratinjau.
+Jangan merapikan folder program atau sistem, karena aplikasi bisa berhenti bekerja.
+Pastikan Ollama sedang berjalan sebelum memakai skrip.
+Log, laporan CSV, dan cache disimpan di `C:\Users\NamaAnda\rapikan_logs`.
+Perintah `git` dan `python` diketik di PowerShell (`PS C:\...>`), sedangkan kalimat perapian diketik di dalam skrip (prompt `Kamu:`).
